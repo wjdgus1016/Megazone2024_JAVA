@@ -1,5 +1,55 @@
 package ch08;
 
+<<<<<<< HEAD
+=======
+/**
+ * ------------- Exception 처리 문제( 해결해보세요!!!!! ) -----------
+ * - 요구사항
+ *   파일을 처리하는 예외가 발생할 수 있음을 가정하고 프로그램 구현.
+ *   - 기능 : 복사공간 여유 확인, 메모리 여유 확인, 파일복사, 설치, 임시파일 삭제  
+ *   - 예외 처리 : 복사 공간 여유 없을 때, 메모리가 부족 할 때
+ *   - 프로그램 동작 순서
+ *     - 설치 시작 -> 복사공간 여유 확인 -> 메모리 여유 확인 -> 파일복사-> 설치 완료
+ *     - 설치 완료 -> 임시파일 삭제 
+ *   - 좋은 코드로 작성하기 위한 기준
+ *     응집도 높다 => 관련있는 것끼리 묶음 => 메소드 형태 
+ *     								=> 설치 메소드, 
+ *     									파일복사, 
+ *     									파일삭제, 
+ *     									메모리 체크, 
+ *     									디스크 용량 체크
+ *     재사용성이 높은 것 => 예외클래스 작성
+ * 
+ */
+
+
+/**
+ * 연결된 예외(chained exception)
+ * 
+ * 
+ * 큰 분류로 묶어서 관리하는 경우, checked 예외를 unchecked 로 변경하는 경우를
+ * 주로 사용 가능성이 높음.
+ * 
+ * 
+* 발생한 예외를 그냥 처리하면 되는데, 왠지 복작해진 것 같은......
+* - 하나의 큰 분류의 예외로 묶어서 관리하고 싶은 경우.
+*   큰 분류의 예외로 catch 해서 처리하려고 하는데,
+*   실제로 발생한 예외를 알 수 가 없게 됨. 
+*   
+*   목적 : 추상화 또는 상속 을 통해서 다형성을 통해 관리의 편리성을 높이기 위함.
+*   	=> 반복되는 코드가 줄어들게 됨.(다형성이 적용된 매개변수, 반환타입)
+*   
+*   
+* - 상속 관계로 exception 을 정의하면 casting 가 필요해짐.
+*   파생된 exception 이 많아지게 되면, casting 의 부담이 높아지게 됨.
+*   
+*   casting 대신에 initCause(), getCause()
+*   
+* - checked 예외를 unchecked 로 변경하려고 하는 경우.
+*   new RuntimeException((new MemoryException())) => unchecked
+* 
+*/
+>>>>>>> 980e98ea0aa497bc216625826d26e09260712f48
 
 
 public class ExceptionEx5 {
@@ -10,11 +60,38 @@ public class ExceptionEx5 {
 		try {
 			install();
 		} catch (InstallException e) {
+			// InstallException 에는 SpaceException or MemoryException 을
+			// 원인 예외로 가지고 있음.
+			
+			if ( e.getCause() instanceof SpaceException )
+				System.out.println("InstallException 의 원인 : SpaceException ");
+			
+			if ( e.getCause() instanceof MemoryException )
+				System.out.println("InstallException 의 원인 : MemoryException ");
+			
 			System.out.println("에러 메세지 : " + e.getMessage());
 			e.printStackTrace();
 		} finally {
 			deleteTempFiles();
 		}
+		
+		// checked 예외를 unchecked 로 변경하려고 하는 경우
+		// Exception -> RuntimeException 로 형변환 처럼 되는것 같지만,
+		// 실제는 연결된 예외임.
+		MemoryException met = new MemoryException("unchecked 예외 용");
+		
+		// Exception -> RuntimeException 로 변경됨.
+		// 하지만, 실제로는 연결된 예외임.
+		// RuntimeException(met)
+		//  -> super((Throwable)met) -> Exception((Throwable)met) ->
+		//  -> super((Throwable)met) -> Throwable((Throwable)met) ->
+		//  this.cause = (Throwable)met;
+		//  
+		//  Throwable class 의 cause 인스턴스 변수에 저장.
+		//  자기 자신의 원인이 되는 예외 => 연결된 예외 라고 함.
+		
+		// 결론적으로 checked -> unchecked 로 변경됨. 컴파일 체크를 하지 않게 됨.
+		RuntimeException rte = new RuntimeException(met);
 		
 	}
 
@@ -23,6 +100,15 @@ public class ExceptionEx5 {
 			startInstall();
 		} catch (SpaceException se) {
 			InstallException ie = new InstallException("설치중 예외발생");
+			
+			// InstallException 의 원인 예외를 등록할 수 있음.
+			// 원인 예외를 InstallException 의 인스턴스 멤버변수로 관리하고 있으니,
+			// 연결된 예외라고 말 할 수 있음.
+			
+			// 원인 예외(cause)의 실제 소유 클래스는 Throwable 임.
+			// 즉, Throwable 클래스의 멤버변수(cause)임.
+			
+			// 모든 예외는 자신을 발생시킨 원인 예외를 가질 수 있음.
 			ie.initCause(se);
 			throw ie;
 		} catch (MemoryException me) {
